@@ -1196,6 +1196,12 @@ async function syncFromGitHub() {
   setSyncStatus('saving', 'Loading from GitHub…');
   try {
     const res = await fetch(GH_RAW_URL + '?t=' + Date.now());
+    // 404 means file doesn't exist yet — push local data up to create it
+    if (res.status === 404) {
+      setSyncStatus('saving', 'Creating data file on GitHub…');
+      await saveToGitHub();
+      return;
+    }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     if (text && text.trim().startsWith('{')) {
