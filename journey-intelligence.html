@@ -389,16 +389,16 @@ header{background:var(--night-slate);padding:36px 40px 30px;position:relative;ov
     </div>
     <div class="modal-body">
       <div class="form-section">
-        <div class="form-section-label">Agency Split</div>
+        <div class="form-section-label">Commission Split</div>
         <div class="split-settings">
           <div class="split-settings-label">Global Default</div>
           <div class="split-row">
-            <label>Agency retains (your cut of each commission)</label>
-            <input type="number" class="split-input" id="s-agency-pct" min="0" max="100" step="1" value="30">
+            <label>My split (your share of each commission)</label>
+            <input type="number" class="split-input" id="s-agency-pct" min="0" max="100" step="1" value="70">
             <span class="split-pct-label">%</span>
           </div>
           <div style="font-size:.62rem;color:var(--text-faint);margin-top:8px;">
-            Net shown = commission × agency%. Override per supplier line in each trip.
+            Net shown = commission × my split%. Override per supplier line in each trip.
           </div>
         </div>
       </div>
@@ -547,18 +547,16 @@ header{background:var(--night-slate);padding:36px 40px 30px;position:relative;ov
 
       <div class="form-section">
         <div class="form-section-label">Planning Fee</div>
-        <div class="form-grid">
-          <div class="form-field">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="form-field" style="flex:1;margin-bottom:0;">
             <label>Fee Amount</label>
             <input type="number" id="t-fee" placeholder="0.00" min="0" step="0.01">
           </div>
-          <div class="form-field" style="justify-content:flex-end;padding-top:18px;">
-            <label class="comm-received-toggle">
-              <input type="checkbox" id="t-fee-received">
-              <div class="toggle-track"><div class="toggle-thumb"></div></div>
-              <span>Fee received</span>
-            </label>
-          </div>
+          <label class="comm-received-toggle" style="flex-shrink:0;margin-top:18px;">
+            <input type="checkbox" id="t-fee-received">
+            <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            <span>Fee received</span>
+          </label>
         </div>
       </div>
     </div>
@@ -594,7 +592,7 @@ const DATA_VERSION = 1;
 const LS_KEY = 'ji-v1';
 
 let clients = [];
-let settings = { agencyPct: 30 };
+let settings = { myPct: 70 };
 let editingClientId = null;
 let editingTripId = null;
 let editingTripClientId = null;
@@ -653,7 +651,7 @@ function loadLocal() {
     const raw = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
     if (raw && raw._version === DATA_VERSION) {
       clients = raw.data || [];
-      if (raw.settings) settings = {...settings, ...raw.settings};
+      if (raw.settings) { const s = raw.settings; settings = {...settings, myPct: s.myPct ?? (s.agencyPct ? (100 - s.agencyPct) : 70) }; }
     } else if (raw) {
       localStorage.removeItem(LS_KEY); // stale version — discard
     }
@@ -681,13 +679,13 @@ function formatMoney(n){
 }
 
 // Agency split helpers
-function agencyPct(override){ return (override != null && override !== '') ? parseFloat(override) : settings.agencyPct; }
+function myPct(override){ return (override != null && override !== '') ? parseFloat(override) : settings.myPct; }
 function netAmt(grossAmt, splitPct){ return (parseFloat(grossAmt)||0) * (splitPct/100); }
 
 function tripNetTotal(trip){
   const commNet = (trip.commLines||[]).reduce((sum,l) => {
     const gross = parseFloat(l.amt) || 0;
-    const pct = agencyPct(l.splitOverride);
+    const pct = myPct(l.splitOverride);
     return sum + gross * pct / 100;
   }, 0);
   const fee = parseFloat(trip.fee) || 0;
@@ -701,19 +699,20 @@ function tripGrossTotal(trip){
 }
 
 function clientTotals(client){
-  let earned = 0, pending = 0;
+  let earned = 0, pending = 0, commissionableValue = 0;
   (client.trips||[]).forEach(t => {
     if(t.status === 'cancelled') return;
     (t.commLines||[]).forEach(l => {
       const gross = parseFloat(l.amt) || 0;
-      const pct = agencyPct(l.splitOverride);
+      const pct = myPct(l.splitOverride);
       const net = gross * pct / 100;
+      commissionableValue += parseFloat(l.price) || 0;
       if(l.received) earned += net; else pending += net;
     });
     const fee = parseFloat(t.fee) || 0;
     if(t.feeReceived) earned += fee; else pending += fee;
   });
-  return {earned, pending};
+  return {earned, pending, commissionableValue};
 }
 
 // ── RENDER ──
@@ -725,19 +724,20 @@ function renderStats(){
   const allTrips = clients.flatMap(c => c.trips||[]);
   const active = allTrips.filter(t => ['inquiry','quoted','booked'].includes(t.status)).length;
   const completed = allTrips.filter(t => t.status === 'completed').length;
-  let totalEarned = 0, totalPending = 0;
+  let totalEarned = 0, totalPending = 0, totalCommVal = 0;
   clients.forEach(c => {
-    const {earned, pending} = clientTotals(c);
-    totalEarned += earned; totalPending += pending;
+    const {earned, pending, commissionableValue} = clientTotals(c);
+    totalEarned += earned; totalPending += pending; totalCommVal += commissionableValue;
   });
 
   el.innerHTML = `
     <div class="stat-card"><div class="stat-label">Clients</div><div class="stat-value">${clients.length}</div></div>
     <div class="stat-card"><div class="stat-label">Active Trips</div><div class="stat-value silver">${active}</div></div>
     <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value silver">${completed}</div></div>
+    <div class="stat-card"><div class="stat-label">Commissionable Value</div><div class="stat-value silver">${formatMoney(totalCommVal)}</div></div>
     <div class="stat-card"><div class="stat-label">Net Earned</div><div class="stat-value green">${formatMoney(totalEarned)}</div></div>
     <div class="stat-card"><div class="stat-label">Net Pending</div><div class="stat-value amber">${formatMoney(totalPending)}</div></div>
-    <div class="stat-card"><div class="stat-label">Agency Split</div><div class="stat-value silver">${settings.agencyPct}%</div></div>
+    <div class="stat-card"><div class="stat-label">My Split</div><div class="stat-value silver">${settings.myPct}%</div></div>
   `;
 }
 
@@ -796,11 +796,11 @@ function renderClients(){
             ${(trip.commLines||[]).map(l => {
               const gross = parseFloat(l.amt)||0;
               if(!gross && !l.supplier) return '';
-              const splitPct = agencyPct(l.splitOverride);
+              const splitPct = myPct(l.splitOverride);
               const net = gross * splitPct / 100;
-              const overrideNote = (l.splitOverride != null && l.splitOverride !== '') ? ` (${l.splitOverride}%)` : ` (${settings.agencyPct}%)`;
+              const overrideNote = (l.splitOverride != null && l.splitOverride !== '') ? ` (${l.splitOverride}%)` : ` (${settings.myPct}%)`;
               return `<div class="commission-row">
-                <span class="comm-label"><span class="supplier">${l.supplier||'Supplier'}</span><br>gross ${formatMoney(l.amt)} · agency${overrideNote}</span>
+                <span class="comm-label"><span class="supplier">${l.supplier||'Supplier'}</span><br>gross ${formatMoney(l.amt)} · my split${overrideNote}</span>
                 <div class="comm-values">
                   <span class="comm-gross">${formatMoney(l.amt)}</span>
                   <span class="comm-net">${formatMoney(net)}</span>
@@ -887,12 +887,12 @@ function clientDisplayName(c){
 
 // ── SETTINGS MODAL ──
 function openSettings(){
-  document.getElementById('s-agency-pct').value = settings.agencyPct;
+  document.getElementById('s-agency-pct').value = settings.myPct;
   document.getElementById('settings-modal').classList.add('open');
 }
 
 function saveSettings(){
-  settings.agencyPct = parseFloat(document.getElementById('s-agency-pct').value) || 30;
+  settings.myPct = parseFloat(document.getElementById('s-agency-pct').value) || 70;
   scheduleSave();
   closeModal('settings-modal');
   render();
@@ -1073,7 +1073,7 @@ function quickCommReceived(clientId, tripId){
 // ── COMMISSION LINES ──
 function addCommLine(data){
   const _id = 'cl-' + Date.now() + Math.random().toString(36).slice(2,5);
-  commLines.push({_id, supplier: data?.supplier||'', price: data?.price||'', pct: data?.pct||'', amt: data?.amt||'', splitOverride: data?.splitOverride ?? null, received: data?.received||false});
+  commLines.push({_id, supplier: data?.supplier||'', price: data?.price||'', pct: data?.pct||'10', amt: data?.amt||'', splitOverride: data?.splitOverride ?? null, received: data?.received||false});
   renderCommLines();
 }
 
@@ -1096,7 +1096,7 @@ function autoCalcLineAmt(_id){
 function updateLineNet(_id){
   const amt = parseFloat(document.getElementById('cl-amt-'+_id)?.value) || 0;
   const splitRaw = document.getElementById('cl-split-'+_id)?.value;
-  const splitPct = (splitRaw !== '' && splitRaw != null) ? parseFloat(splitRaw) : settings.agencyPct;
+  const splitPct = (splitRaw !== '' && splitRaw != null) ? parseFloat(splitRaw) : settings.myPct;
   const net = amt * splitPct / 100;
   const netEl = document.getElementById('cl-net-'+_id);
   if(netEl) netEl.textContent = amt > 0 ? formatMoney(net) + ' net' : '';
@@ -1109,7 +1109,7 @@ function syncCommLines(){
     line.pct      = document.getElementById('cl-pct-'+line._id)?.value || '';
     line.amt      = document.getElementById('cl-amt-'+line._id)?.value || '';
     const splitRaw = document.getElementById('cl-split-'+line._id)?.value;
-    line.splitOverride = (splitRaw !== '' && splitRaw != null && !isNaN(parseFloat(splitRaw))) ? parseFloat(splitRaw) : null;
+    line.splitOverride = (splitRaw !== '' && splitRaw != null && splitRaw !== String(settings.myPct) && !isNaN(parseFloat(splitRaw))) ? parseFloat(splitRaw) : null;
     line.received = document.getElementById('cl-recv-'+line._id)?.checked || false;
   });
 }
@@ -1148,8 +1148,8 @@ function renderCommLines(){
         </div>
       </div>
       <div class="comm-line-split">
-        <label>Agency split override <span style="font-size:.62rem;color:var(--text-faint)">(default: ${settings.agencyPct}%)</span></label>
-        <input type="number" class="split-override-input" id="cl-split-${line._id}" value="${line.splitOverride ?? ''}" placeholder="${settings.agencyPct}" min="0" max="100" step="1"
+        <label>My split override <span style="font-size:.62rem;color:var(--text-faint)">(default: ${settings.myPct}%)</span></label>
+        <input type="number" class="split-override-input" id="cl-split-${line._id}" value="${line.splitOverride ?? ''}" placeholder="${settings.myPct}" min="0" max="100" step="1"
           oninput="updateLineNet('${line._id}')">
         <span style="font-size:.68rem;color:var(--text-dim);">%</span>
         <span class="comm-line-net" id="cl-net-${line._id}"></span>
@@ -1210,7 +1210,7 @@ async function syncFromGitHub() {
         Array.isArray(parsed.data) && parsed.data.length > 0;
       if (hasData) {
         clients = parsed.data;
-        if (parsed.settings) settings = {...settings, ...parsed.settings};
+        if (parsed.settings) { const s = parsed.settings; settings = {...settings, myPct: s.myPct ?? (s.agencyPct ? (100 - s.agencyPct) : 70) }; }
         persist();
         render();
         setSyncStatus('connected', 'Synced from GitHub · ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
@@ -1285,6 +1285,49 @@ function resetLocalData() {
 }
 
 window.addEventListener('beforeunload', e => { if (saveTimer || pendingSave) { e.preventDefault(); e.returnValue = ''; } });
+
+
+// ── PHONE FORMATTING ──────────────────────────────────────────────────────
+function formatPhone(input) {
+  // Strip all non-digit chars except leading +
+  let raw = input.value.replace(/[^\d+]/g, '');
+  // Detect international prefix (starts with + or more than 10 digits)
+  let formatted = '';
+  if (raw.startsWith('+')) {
+    // International: keep + then format rest
+    const digits = raw.slice(1).replace(/\D/g, '');
+    if (digits.length <= 1) {
+      formatted = '+' + digits;
+    } else if (digits.length <= 4) {
+      formatted = '+' + digits.slice(0,1) + ' (' + digits.slice(1);
+    } else if (digits.length <= 7) {
+      formatted = '+' + digits.slice(0,1) + ' (' + digits.slice(1,4) + ') ' + digits.slice(4);
+    } else if (digits.length <= 11) {
+      formatted = '+' + digits.slice(0,1) + ' (' + digits.slice(1,4) + ') ' + digits.slice(4,7) + '-' + digits.slice(7);
+    } else {
+      formatted = '+' + digits.slice(0,1) + ' (' + digits.slice(1,4) + ') ' + digits.slice(4,7) + '-' + digits.slice(7,11);
+    }
+  } else {
+    // Domestic US/CA: assume +1
+    const digits = raw.replace(/\D/g, '');
+    if (digits.length <= 3) {
+      formatted = digits.length ? '(' + digits : '';
+    } else if (digits.length <= 6) {
+      formatted = '(' + digits.slice(0,3) + ') ' + digits.slice(3);
+    } else if (digits.length <= 10) {
+      formatted = '(' + digits.slice(0,3) + ') ' + digits.slice(3,6) + '-' + digits.slice(6);
+    } else {
+      // 11+ digits — treat first digit as country code
+      formatted = '+' + digits.slice(0,1) + ' (' + digits.slice(1,4) + ') ' + digits.slice(4,7) + '-' + digits.slice(7,11);
+    }
+  }
+  input.value = formatted;
+}
+
+['c-phone','c-phone2'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', () => formatPhone(el));
+});
 
 // ── SEED DATA ──
 function seedData(){
