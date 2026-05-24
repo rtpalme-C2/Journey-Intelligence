@@ -1381,5 +1381,195 @@ if (configOk()) {
 }
 
 </script>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Journey Intelligence — Proposal Tracker
+       ═══════════════════════════════════════════════════════ -->
+  <script>
+  (function() {
+    if (window._jiProposalsPatch) return;
+
+    var P = { editingClientId: null, editingTripId: null };
+
+    function getStore() {
+      try { return JSON.parse(localStorage.getItem('ji-proposals') || '{}'); } catch(e) { return {}; }
+    }
+    function setProposals(tripId, proposals) {
+      var s = getStore(); s[tripId] = proposals;
+      localStorage.setItem('ji-proposals', JSON.stringify(s));
+    }
+    function getProposals(tripId) { return getStore()[tripId] || []; }
+
+    var style = document.createElement('style');
+    style.textContent = [
+      '.proposal-line{display:flex;gap:8px;align-items:flex-end;padding:10px 0;border-bottom:1px solid var(--border)}',
+      '.proposal-line:last-child{border-bottom:none}',
+      '.proposal-line .form-field{flex:1;margin:0}',
+      '.pl-filename-field{flex:2 !important}',
+      '.pl-url-field{flex:3 !important}',
+      '.pf-date{flex:0 0 136px !important}',
+      '.proposal-line-remove{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1.1rem;padding:0 4px;line-height:1;align-self:flex-end;margin-bottom:2px}',
+      '.proposal-line-remove:hover{color:#c0392b}',
+      '.pl-optional{font-size:.58rem;color:var(--text-dim);font-style:italic;margin-left:3px;font-weight:400}',
+      '#proposal-lines-wrap:empty::before{content:"No proposals yet — click + Add Proposal";font-size:.7rem;color:var(--text-dim);font-style:italic;display:block;padding:6px 0}',
+      '.trip-proposals{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}',
+      '.trip-proposals-label{font-size:.58rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px}',
+      '.proposal-link-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:.76rem}',
+      '.proposal-link-row a{color:var(--accent,#7a5c1e);text-decoration:none;font-weight:500}',
+      '.proposal-link-row a:hover{text-decoration:underline}',
+      '.proposal-link-nourl{color:var(--text-main);font-weight:500}',
+      '.proposal-link-date{color:var(--text-dim);font-size:.68rem}'
+    ].join('');
+    document.head.appendChild(style);
+
+    function ea(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;'); }
+
+    function injectSection() {
+      if (document.getElementById('proposal-lines-wrap')) return;
+      var body = document.querySelector('#trip-modal .modal-body');
+      if (!body) return;
+      var sec = document.createElement('div');
+      sec.className = 'form-section';
+      sec.innerHTML = '<div class="form-section-label">Proposals <button type="button" class="btn-add-line" onclick="addProposalLine()">+ Add Proposal</button></div><div id="proposal-lines-wrap"></div>';
+      body.appendChild(sec);
+    }
+
+    window.addProposalLine = function(p) {
+      var wrap = document.getElementById('proposal-lines-wrap');
+      if (!wrap) return;
+      var id = (p && p.id) || (window.newId ? window.newId() : Date.now().toString(36));
+      var row = document.createElement('div');
+      row.className = 'proposal-line';
+      row.dataset.pid = id;
+      row.innerHTML =
+        '<div class="form-field pl-filename-field">' +
+          '<label>Filename</label>' +
+          '<input type="text" class="pl-label" placeholder="McKinley_Cupp_Getaway_2026-05.pdf" value="' + ea(p && p.label) + '">' +
+        '</div>' +
+        '<div class="form-field pl-url-field">' +
+          '<label>URL <span class="pl-optional">(optional)</span></label>' +
+          '<input type="url" class="pl-url" placeholder="https://... leave blank if using local file" value="' + ea(p && p.url) + '">' +
+        '</div>' +
+        '<div class="form-field pf-date">' +
+          '<label>Date Sent</label>' +
+          '<input type="date" class="pl-date" value="' + ((p && p.dateSent) || '') + '">' +
+        '</div>' +
+        '<button type="button" class="proposal-line-remove" onclick="removeProposalLine(\'' + id + '\')">\u00d7</button>';
+      wrap.appendChild(row);
+    };
+
+    window.removeProposalLine = function(id) {
+      var row = document.querySelector('.proposal-line[data-pid="' + id + '"]');
+      if (row) row.remove();
+    };
+
+    window.syncProposalLines = function() {
+      var wrap = document.getElementById('proposal-lines-wrap');
+      if (!wrap) return [];
+      return Array.from(wrap.querySelectorAll('.proposal-line')).map(function(row) {
+        return {
+          id: row.dataset.pid,
+          label: row.querySelector('.pl-label').value.trim(),
+          url: row.querySelector('.pl-url').value.trim(),
+          dateSent: row.querySelector('.pl-date').value
+        };
+      }).filter(function(p) { return p.label || p.url; });
+    };
+
+    window.renderProposalLines = function(proposals) {
+      var wrap = document.getElementById('proposal-lines-wrap');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      (proposals || []).forEach(function(p) { window.addProposalLine(p); });
+    };
+
+    var _op = window.persist;
+    window.persist = function() {
+      _op();
+      try {
+        var store = getStore();
+        if (!Object.keys(store).length) return;
+        var d = JSON.parse(localStorage.getItem('ji-v1'));
+        var dirty = false;
+        Object.values(d.data).forEach(function(c) {
+          (c.trips || []).forEach(function(t) {
+            if (store[t.id]) { t.proposals = store[t.id]; dirty = true; }
+          });
+        });
+        if (dirty) localStorage.setItem('ji-v1', JSON.stringify(d));
+      } catch(e) { console.error('JI proposal persist error', e); }
+    };
+
+    var _oa = window.openAddTrip;
+    window.openAddTrip = function(clientId) {
+      P.editingClientId = clientId; P.editingTripId = null;
+      _oa(clientId); injectSection(); window.renderProposalLines([]);
+    };
+
+    var _oe = window.openEditTrip;
+    window.openEditTrip = function(clientId, tripId) {
+      P.editingClientId = clientId; P.editingTripId = tripId;
+      _oe(clientId, tripId); injectSection(); window.renderProposalLines(getProposals(tripId));
+    };
+
+    var _os = window.saveTrip;
+    window.saveTrip = function() {
+      var proposals = window.syncProposalLines();
+      var editingId = P.editingTripId;
+      var beforeIds = new Set();
+      try {
+        var b = JSON.parse(localStorage.getItem('ji-v1'));
+        Object.values(b.data).forEach(function(c) { (c.trips||[]).forEach(function(t) { beforeIds.add(t.id); }); });
+      } catch(e) {}
+      _os();
+      var tripId = editingId;
+      if (!tripId) {
+        try {
+          var after = JSON.parse(localStorage.getItem('ji-v1'));
+          Object.values(after.data).forEach(function(c) {
+            (c.trips||[]).forEach(function(t) { if (!beforeIds.has(t.id)) tripId = t.id; });
+          });
+        } catch(e) {}
+      }
+      if (tripId) { setProposals(tripId, proposals); window.persist(); }
+    };
+
+    function injectCards() {
+      try {
+        var store = getStore();
+        if (!Object.keys(store).length) return;
+        var d = JSON.parse(localStorage.getItem('ji-v1'));
+        Object.values(d.data).forEach(function(c) {
+          (c.trips || []).forEach(function(t) {
+            var detail = document.getElementById('td-' + c.id + '-' + t.id);
+            if (!detail) return;
+            var old = detail.querySelector('.trip-proposals'); if (old) old.remove();
+            var props = store[t.id] || [];
+            if (!props.length) return;
+            var box = document.createElement('div');
+            box.className = 'trip-proposals';
+            box.innerHTML = '<div class="trip-proposals-label">Proposals</div>' +
+              props.map(function(p) {
+                var date = p.dateSent ? ' <span class="proposal-link-date">Sent ' + p.dateSent + '</span>' : '';
+                var label = ea(p.label || p.url || 'Proposal');
+                var content = p.url
+                  ? '<a href="' + ea(p.url) + '" target="_blank" rel="noopener">' + label + '</a>'
+                  : '<span class="proposal-link-nourl">' + label + '</span>';
+                return '<div class="proposal-link-row">\ud83d\udcc4 ' + content + date + '</div>';
+              }).join('');
+            var actions = detail.querySelector('.trip-actions');
+            actions ? detail.insertBefore(box, actions) : detail.appendChild(box);
+          });
+        });
+      } catch(e) {}
+    }
+
+    var _or = window.render;
+    window.render = function() { _or(); setTimeout(injectCards, 0); };
+    setTimeout(injectCards, 300);
+
+    window._jiProposalsPatch = true;
+  })();
+  </script>
 </body>
 </html>
