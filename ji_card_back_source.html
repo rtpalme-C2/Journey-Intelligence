@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200;0,300;0,400;0,500;1,200;1,300;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { width: 813px; height: 813px; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: #F5F2EC;
+  width: 813px;
+  height: 813px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.bg-paths {
+  position: absolute;
+  top: 0; left: 0;
+  width: 813px;
+  height: 813px;
+  pointer-events: none;
+}
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.name {
+  font-size: 52px;
+  font-weight: 300;
+  color: #1E1609;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: 24px;
+}
+.divider {
+  width: 400px;
+  height: 1px;
+  background: rgba(184,144,12,.22);
+  margin-bottom: 22px;
+}
+.title {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  color: #8C6C2C;
+  text-transform: uppercase;
+  margin-bottom: 52px;
+}
+.email {
+  font-size: 26px;
+  font-weight: 300;
+  color: #4A3410;
+  letter-spacing: 0.01em;
+  margin-bottom: 14px;
+}
+.phone {
+  font-size: 26px;
+  font-weight: 300;
+  color: #4A3410;
+  letter-spacing: 0.04em;
+}
+</style>
+</head>
+<body>
+<svg class="bg-paths" viewBox="0 0 813 813" xmlns="http://www.w3.org/2000/svg">
+  <rect width="813" height="813" fill="#F5F2EC"/>
+  <path d="M-20 600 C180 420 380 530 580 360 C700 270 800 320 870 290" stroke="rgba(184,144,12,.10)" stroke-width="2.2" fill="none"/>
+  <path d="M-20 660 C160 480 360 590 560 420 C685 330 790 385 870 355" stroke="rgba(184,144,12,.06)" stroke-width="1.6" fill="none"/>
+  <path d="M60 710 C260 525 460 635 660 465 C765 385 850 430 880 410" stroke="rgba(184,144,12,.04)" stroke-width="1.2" fill="none"/>
+</svg>
+<div class="content">
+  <div class="name">Robert Palme</div>
+  <div class="divider"></div>
+  <div class="title">Travel Advisor · Fora Travel</div>
+  <div class="email">robert.palme@fora.travel</div>
+  <div class="phone">+1.562.852.4798</div>
+</div>
+</body>
+</html>
