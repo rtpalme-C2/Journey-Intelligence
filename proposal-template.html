@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Journey Intelligence — Proposal Template</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500&display=swap&display=swap" rel="stylesheet">
+<style>
+
+/* ─────────────────────────────────────────────
+   RESET & BASE
+───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --night-slate:  #1E1609;
+  --deep-steel:   #2E2410;
+  --steel:        #6C500F;
+  --warm-silver:  #B8900C;
+  --paper:        #F5F2EC;
+  --text-main:    #1E1609;
+  --text-mid:     #5C3D0A;
+  --text-dim:     #9C7A3A;
+  --text-faint:   #C4A86A;
+  --rule:         #DDC87A;
+  --stripe:       #F0EAD8;
+  --white:        #ffffff;
+
+  /* Page dimensions — US Letter */
+  --page-w: 8.5in;
+  --page-h: 11in;
+  --margin-x: 0.65in;
+  --margin-y: 0.6in;
+  --content-w: calc(var(--page-w) - var(--margin-x) * 2);
+}
+
+html {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10pt;
+  color: var(--text-main);
+  background: #ccc;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ─────────────────────────────────────────────
+   PAGE SHELL
+───────────────────────────────────────────── */
+.page {
+  width: var(--page-w);
+  min-height: var(--page-h);
+  background: var(--white);
+  margin: 0.4in auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 32px rgba(0,0,0,.18);
+}
+
+.page-inner {
+  padding: var(--margin-y) var(--margin-x);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─────────────────────────────────────────────
+   PAGE FOOTER (every content page)
+───────────────────────────────────────────── */
+.page-footer {
+  position: absolute;
+  bottom: 0.32in;
+  left: var(--margin-x);
+  right: var(--margin-x);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 7pt;
+  letter-spacing: .06em;
+  color: var(--text-faint);
+  font-weight: 400;
+}
+.page-footer::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 0; right: 0;
+  height: 0.5px;
+  background: var(--rule);
+}
+
+/* ─────────────────────────────────────────────
+   COVER PAGE
+───────────────────────────────────────────── */
+.cover .page-inner {
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.cover-brand {
+  font-size: 7pt;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 0.28in;
+}
+
+.cover-rule {
+  height: 1.5px;
+  background: var(--night-slate);
+  margin-bottom: 0.22in;
+}
+
+.cover-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 36pt;
+  font-weight: 200;
+  color: var(--night-slate);
+  line-height: 1.1;
+  margin-bottom: 0.06in;
+}
+.cover-title em {
+  font-style: italic;
+  font-weight: 300;
+}
+
+.cover-subtitle {
+  font-size: 9pt;
+  font-weight: 400;
+  color: var(--text-mid);
+  letter-spacing: .04em;
+  margin-bottom: 0.28in;
+}
+
+.cover-prepared {
+  font-size: 7.5pt;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 4pt;
+}
+
+.cover-client {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 22pt;
+  font-weight: 300;
+  color: var(--night-slate);
+  margin-bottom: 0.18in;
+}
+
+.cover-description {
+  font-size: 9.5pt;
+  color: var(--text-mid);
+  line-height: 1.65;
+  max-width: 5.2in;
+  margin-bottom: 0.3in;
+}
+
+/* Cover summary table */
+.cover-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.18in;
+}
+.cover-table th {
+  background: var(--night-slate);
+  color: var(--warm-silver);
+  font-size: 7.5pt;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 7pt 10pt;
+  text-align: left;
+}
+.cover-table th:not(:first-child) { text-align: center; }
+.cover-table td {
+  font-size: 9pt;
+  color: var(--text-mid);
+  padding: 6pt 10pt;
+  border-bottom: 0.5px solid var(--rule);
+}
+.cover-table td:not(:first-child) { text-align: center; }
+.cover-table tr:nth-child(even) td { background: var(--stripe); }
+.cover-table tr.total td {
+  font-weight: 600;
+  color: var(--night-slate);
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+  border-bottom: none;
+}
+
+.cover-note {
+  font-size: 7.5pt;
+  color: var(--text-faint);
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ─────────────────────────────────────────────
+   CONTENT PAGE HEADER (destination/section tag)
+───────────────────────────────────────────── */
+.content-tag {
+  font-size: 7pt;
+  font-weight: 600;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 0.05in;
+}
+
+.content-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 26pt;
+  font-weight: 300;
+  color: var(--night-slate);
+  line-height: 1.1;
+  margin-bottom: 4pt;
+}
+
+.content-tagline {
+  font-size: 9.5pt;
+  font-style: italic;
+  color: var(--text-mid);
+  margin-bottom: 9pt;
+}
+
+.content-body {
+  font-size: 9pt;
+  color: var(--text-mid);
+  line-height: 1.65;
+  margin-bottom: 0.18in;
+}
+
+.section-rule {
+  height: 0.5px;
+  background: var(--rule);
+  margin-bottom: 0.14in;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION LABEL
+───────────────────────────────────────────── */
+.section-label {
+  font-size: 7pt;
+  font-weight: 600;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 0.1in;
+}
+
+/* ─────────────────────────────────────────────
+   HOTEL BLOCK — two column
+───────────────────────────────────────────── */
+.hotels-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.18in;
+  margin-bottom: 0.18in;
+}
+
+.hotel-card {
+  border-left: 2px solid var(--rule);
+  padding-left: 0.12in;
+}
+
+.hotel-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11pt;
+  font-weight: 600;
+  color: var(--night-slate);
+  margin-bottom: 5pt;
+  line-height: 1.25;
+}
+
+.hotel-desc {
+  font-size: 8.5pt;
+  color: var(--text-mid);
+  line-height: 1.6;
+  margin-bottom: 6pt;
+}
+
+.hotel-meta {
+  font-size: 8pt;
+  font-weight: 600;
+  color: var(--steel);
+  letter-spacing: .02em;
+}
+
+/* ─────────────────────────────────────────────
+   ITINERARY
+───────────────────────────────────────────── */
+.itin-day {
+  font-size: 9pt;
+  font-weight: 600;
+  color: var(--night-slate);
+  margin-bottom: 5pt;
+  margin-top: 10pt;
+}
+.itin-day:first-child { margin-top: 0; }
+
+.itin-row {
+  display: grid;
+  grid-template-columns: 0.75in 1fr;
+  gap: 0 8pt;
+  margin-bottom: 3pt;
+}
+
+.itin-time {
+  font-size: 8pt;
+  font-weight: 500;
+  color: var(--text-dim);
+  padding-top: 1pt;
+  white-space: nowrap;
+}
+
+.itin-desc {
+  font-size: 8.5pt;
+  color: var(--text-mid);
+  line-height: 1.55;
+}
+
+/* ─────────────────────────────────────────────
+   BUDGET BOXES — horizontal layout
+───────────────────────────────────────────── */
+.budget-section {
+  margin-top: 0.16in;
+}
+
+.budget-label {
+  font-size: 7pt;
+  font-weight: 600;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 0.1in;
+}
+
+.budget-boxes {
+  display: flex;
+  gap: 8pt;
+  margin-bottom: 8pt;
+}
+
+.budget-box {
+  flex: 1;
+  border: 0.5px solid var(--rule);
+  border-radius: 3pt;
+  padding: 9pt 10pt;
+  background: var(--white);
+}
+
+.budget-box-label {
+  font-size: 7pt;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 4pt;
+  line-height: 1.4;
+}
+
+.budget-box-amount {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13pt;
+  font-weight: 500;
+  color: var(--night-slate);
+  line-height: 1.1;
+  margin-bottom: 2pt;
+}
+
+.budget-box-sub {
+  font-size: 7pt;
+  color: var(--text-faint);
+  line-height: 1.4;
+}
+
+.budget-total-box {
+  background: var(--night-slate);
+  border-color: var(--night-slate);
+}
+.budget-total-box .budget-box-label { color: var(--warm-silver); opacity: .7; }
+.budget-total-box .budget-box-amount { color: var(--warm-silver); font-size: 16pt; }
+.budget-total-box .budget-box-sub { color: var(--warm-silver); opacity: .5; }
+
+.budget-note {
+  font-size: 7.5pt;
+  color: var(--text-faint);
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ─────────────────────────────────────────────
+   FLIGHT VARIANT — budget comparison table
+   (for fly-to proposals)
+───────────────────────────────────────────── */
+.budget-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10pt;
+}
+.budget-compare-table th {
+  background: var(--deep-steel);
+  color: var(--paper);
+  font-size: 7.5pt;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 6pt 9pt;
+  text-align: left;
+}
+.budget-compare-table th:not(:first-child) { text-align: center; }
+.budget-compare-table td {
+  font-size: 8.5pt;
+  color: var(--text-mid);
+  padding: 5pt 9pt;
+  border-bottom: 0.5px solid var(--rule);
+}
+.budget-compare-table td:not(:first-child) { text-align: center; }
+.budget-compare-table tr:nth-child(even) td { background: var(--stripe); }
+.budget-compare-table tr.total td {
+  font-weight: 600;
+  color: var(--night-slate);
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+  border-bottom: none;
+}
+
+/* Bottom-line summary boxes for fly-to */
+.summary-boxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8pt;
+  margin-top: 10pt;
+  margin-bottom: 8pt;
+}
+.summary-box {
+  border: 0.5px solid var(--rule);
+  border-radius: 3pt;
+  padding: 9pt 10pt;
+  background: var(--stripe);
+}
+.summary-box-label {
+  font-size: 7pt;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 5pt;
+  line-height: 1.4;
+}
+.summary-box-amount {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12pt;
+  font-weight: 500;
+  color: var(--night-slate);
+  line-height: 1.2;
+}
+.summary-box-sub {
+  font-size: 7pt;
+  color: var(--text-faint);
+  margin-top: 2pt;
+}
+
+/* ─────────────────────────────────────────────
+   UTILITY
+───────────────────────────────────────────── */
+.mt-sm  { margin-top: 6pt; }
+.mt-md  { margin-top: 12pt; }
+.mb-sm  { margin-bottom: 6pt; }
+.spacer { flex: 1; }
+
+/* ─────────────────────────────────────────────
+   PRINT
+───────────────────────────────────────────── */
+@media print {
+  html { background: white; }
+  .page {
+    margin: 0;
+    box-shadow: none;
+    page-break-after: always;
+    break-after: page;
+  }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  @page { size: letter; margin: 0; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     COVER PAGE
+════════════════════════════════════════════ -->
+<div class="page cover">
+  <div class="page-inner">
+
+    <div class="cover-brand">Journey Intelligence</div>
+    <div class="cover-rule"></div>
+
+    <!-- EDIT: Main proposal title -->
+    <div class="cover-title">Weekend getaway<br><em>proposals.</em></div>
+    <!-- DRIVABLE variant subtitle -->
+    <!-- <div class="cover-subtitle">Three hand-picked weekend destinations — all drivable from Dallas.</div> -->
+    <!-- FLY-TO variant subtitle -->
+    <div class="cover-subtitle">New Orleans, French Quarter — fly-to weekend proposal.</div>
+
+    <div class="cover-prepared">Prepared for</div>
+    <!-- EDIT: Client name -->
+    <div class="cover-client">McKinley Cupp</div>
+
+    <!-- EDIT: Description paragraph -->
+    <div class="cover-description">
+      Two hotel options, a full itinerary, and weekend vs. weekday pricing side-by-side — so you can see exactly what you save by going mid-week.
+    </div>
+
+    <!-- ── DRIVABLE: simple destination + budget table ── -->
+    <!--
+    <table class="cover-table">
+      <thead>
+        <tr>
+          <th>Destination</th>
+          <th>Drive from Dallas</th>
+          <th>Est. budget (couple)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Austin, TX</td><td>~3 hours</td><td>$890 – $1,250</td></tr>
+        <tr><td>San Antonio, TX</td><td>~4 – 4.5 hrs</td><td>$880 – $1,300</td></tr>
+        <tr><td>Hot Springs, AR</td><td>~3.5 hours</td><td>$755 – $1,095</td></tr>
+      </tbody>
+    </table>
+    <div class="cover-note">Budgets cover hotel, dining, bars, activities, and gas for a Friday–Sunday trip. Estimates assume mid-range spending.</div>
+    -->
+
+    <!-- ── FLY-TO: weekend vs weekday summary table ── -->
+    <table class="cover-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Weekend (Fri–Sun)</th>
+          <th>Weekday (Mon–Thu)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Flights — round trip, per person</td><td>$180–$280</td><td>$100–$160</td></tr>
+        <tr><td>Hotel — 2 nights</td><td>$400–$700</td><td>$260–$440</td></tr>
+        <tr><td>Dining + bars</td><td>$300–$450</td><td>$300–$450</td></tr>
+        <tr><td>Activities</td><td>$40–$80</td><td>$40–$80</td></tr>
+        <tr class="total"><td>Estimated total — per couple</td><td>$1,220–$1,710</td><td>$800–$1,280</td></tr>
+      </tbody>
+    </table>
+    <div class="cover-note">American Airlines nonstop DFW–MSY (~1 hr 30 min). Hotel rates reflect typical market pricing; book early. Covers flights, hotel, dining, bars, and activities for a 3-night trip.</div>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     DESTINATION / HOTEL PAGE
+     (one per destination for drivable; one for fly-to)
+════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-inner">
+
+    <!-- DRIVABLE tag example: -->
+    <!-- <div class="content-tag">~3 Hours from Dallas</div> -->
+    <!-- FLY-TO tag: -->
+    <div class="content-tag">French Quarter · New Orleans, LA</div>
+
+    <!-- EDIT: Destination title & tagline -->
+    <div class="content-title">Where to Stay</div>
+    <div class="content-tagline">Two strong options — one puts you in the middle of everything, one pulls you just far enough away.</div>
+
+    <div class="content-body">
+      Both hotels are well-established French Quarter options with strong reputations. Monteleone puts you inside the Quarter steps from Bourbon Street; Windsor Court sits a half-block from Canal — quieter, more upscale, and slightly removed from the noise.
+    </div>
+
+    <div class="section-rule"></div>
+    <div class="section-label">Where to Stay</div>
+
+    <!-- ── TWO-COLUMN HOTEL GRID ── -->
+    <div class="hotels-grid">
+
+      <div class="hotel-card">
+        <!-- EDIT: Hotel 1 -->
+        <div class="hotel-name">Hotel Monteleone</div>
+        <div class="hotel-desc">
+          A French Quarter landmark since 1886, on Royal Street steps from Bourbon. Home to the famous Carousel Bar — a slowly rotating cocktail bar that's a destination on its own. Rooftop pool, full-service spa, and 570 rooms with marble bathrooms and plush robes. Couples rate the location 9.8/10.
+        </div>
+        <div class="hotel-meta">★ 4.4 · ~$250–$380 / night (weekend) · ~$150–$220 (weekday)</div>
+      </div>
+
+      <div class="hotel-card">
+        <!-- EDIT: Hotel 2 -->
+        <div class="hotel-name">The Windsor Court</div>
+        <div class="hotel-desc">
+          Five-star hotel a half-block from Canal Street — close enough to walk everywhere, far enough to feel like a retreat. Rated 9.6/10 (Exceptional). Features $10 million in museum-quality art. Full-service spa, rooftop pool and bar, and The Grill Room — the city's only AAA Four Diamond restaurant.
+        </div>
+        <div class="hotel-meta">★ 4.8 · ~$370–$500 / night (weekend) · ~$220–$320 (weekday)</div>
+      </div>
+
+    </div>
+
+    <div class="section-rule"></div>
+    <div class="section-label">Weekend Itinerary</div>
+
+    <!-- ── ITINERARY ── -->
+    <div class="itin-day">Friday — Fly in, drop bags, go</div>
+
+    <div class="itin-row">
+      <div class="itin-time">Afternoon</div>
+      <div class="itin-desc">Fly DFW to MSY (~1.5 hrs nonstop). Check in, freshen up.</div>
+    </div>
+    <div class="itin-row">
+      <div class="itin-time">Evening</div>
+      <div class="itin-desc">Dinner at Cafe Amelie — patio seating on a quiet Royal Street courtyard under bistro lights. Reserve ahead; outdoor tables fill quickly. Known for shrimp and grits.</div>
+    </div>
+    <div class="itin-row">
+      <div class="itin-time">Night</div>
+      <div class="itin-desc">Carousel Bar at Hotel Monteleone — even if you're not staying there, this is a must. Then bar-hop Bourbon Street: Lafitte's Blacksmith Shop for frozen daiquiris, Pat O'Brien's for the courtyard and a Hurricane.</div>
+    </div>
+
+    <div class="itin-day">Saturday — Full day in the Quarter</div>
+
+    <div class="itin-row">
+      <div class="itin-time">Morning</div>
+      <div class="itin-desc">Brunch at Brennan's — a New Orleans institution since 1946. Famous for Bananas Foster, invented here.</div>
+    </div>
+    <div class="itin-row">
+      <div class="itin-time">Afternoon</div>
+      <div class="itin-desc">Walk Royal Street for art galleries and antiques. Stroll Jackson Square, watch street performers near St. Louis Cathedral. Stop at Muriel's courtyard for an afternoon cocktail.</div>
+    </div>
+    <div class="itin-row">
+      <div class="itin-time">Evening</div>
+      <div class="itin-desc">Dinner at Restaurant R'evolution — upscale Creole, intimate atmosphere, extensive cocktail and wine list. Note any occasion when booking.</div>
+    </div>
+    <div class="itin-row">
+      <div class="itin-time">Night</div>
+      <div class="itin-desc">Preservation Hall for live traditional jazz (shows 8–10 PM — book ahead). Then Frenchmen Street; The Spotted Cat has the best jazz in the city.</div>
+    </div>
+
+    <div class="itin-day">Sunday — Easy morning, fly home</div>
+
+    <div class="itin-row">
+      <div class="itin-time">Morning</div>
+      <div class="itin-desc">Beignets and cafe au lait at Cafe Du Monde — open-air patio facing Jackson Square. Browse the French Market for hot sauce and pralines.</div>
+    </div>
+    <div class="itin-row">
+      <div class="itin-time">Midday</div>
+      <div class="itin-desc">Head to the airport for an afternoon flight back to Dallas (~1.5 hrs).</div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <span>Journey Intelligence</span>
+    <span>New Orleans · French Quarter · Page 2</span>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     BUDGET PAGE
+     Use this layout for FLY-TO (weekend vs weekday comparison)
+════════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-inner">
+
+    <div class="content-tag">French Quarter · New Orleans, LA</div>
+    <div class="content-title">Weekend vs. Weekday Pricing</div>
+    <div class="content-tagline">The food, bars, and experience are identical — the crowds and the cost are not.</div>
+
+    <div class="content-body">
+      New Orleans is a strong case for going mid-week. Hotels drop noticeably Monday–Thursday and flights follow the same pattern. Going weekday saves roughly $350–$600 per couple depending on hotel choice.
+    </div>
+
+    <div class="section-rule"></div>
+    <div class="section-label">Flights — DFW to MSY (Nonstop)</div>
+
+    <div class="content-body">
+      American Airlines operates the most frequent nonstop service (~1 hr 30 min). Weekday departures (Monday/Thursday) typically run $100–$160 per person round trip. Weekend departures push to $180–$280 per person. Budget carriers like Spirit and Frontier occasionally undercut those ranges.
+    </div>
+
+    <div class="section-rule"></div>
+    <div class="section-label">Full Budget Breakdown — Per Couple</div>
+
+    <table class="budget-compare-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Weekend (Fri–Sun)</th>
+          <th>Weekday (Mon–Thu)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Flights — 2 people, round trip</td><td>$360–$560</td><td>$200–$320</td></tr>
+        <tr><td>Hotel — Monteleone, 2 nights</td><td>$500–$760</td><td>$300–$440</td></tr>
+        <tr><td>Hotel — Windsor Court, 2 nights</td><td>$740–$1,000</td><td>$440–$640</td></tr>
+        <tr><td>Dining — 3 dinners + 2 brunches</td><td>$280–$400</td><td>$280–$400</td></tr>
+        <tr><td>Bars and drinks</td><td>$120–$200</td><td>$120–$200</td></tr>
+        <tr><td>Activities (Preservation Hall, etc.)</td><td>$40–$80</td><td>$40–$80</td></tr>
+        <tr class="total"><td>Total with Monteleone</td><td>$1,300–$2,000</td><td>$940–$1,440</td></tr>
+        <tr class="total"><td>Total with Windsor Court</td><td>$1,540–$2,240</td><td>$1,080–$1,640</td></tr>
+      </tbody>
+    </table>
+
+    <div class="section-label mt-md">The Bottom Line</div>
+
+    <div class="summary-boxes">
+      <div class="summary-box">
+        <div class="summary-box-label">Weekend<br>Monteleone</div>
+        <div class="summary-box-amount">$1,300–$2,000</div>
+        <div class="summary-box-sub">per couple</div>
+      </div>
+      <div class="summary-box">
+        <div class="summary-box-label">Weekend<br>Windsor Court</div>
+        <div class="summary-box-amount">$1,540–$2,240</div>
+        <div class="summary-box-sub">per couple</div>
+      </div>
+      <div class="summary-box">
+        <div class="summary-box-label">Weekday<br>Monteleone</div>
+        <div class="summary-box-amount">$940–$1,440</div>
+        <div class="summary-box-sub">per couple</div>
+      </div>
+      <div class="summary-box">
+        <div class="summary-box-label">Weekday<br>Windsor Court</div>
+        <div class="summary-box-amount">$1,080–$1,640</div>
+        <div class="summary-box-sub">per couple</div>
+      </div>
+    </div>
+
+    <div class="budget-note">
+      Budgets cover flights, hotel, dining, bars, and activities. Mid-range spending assumed. Hotel rates are market estimates and vary by season — book early. New Orleans has plenty of free entertainment: street music, Jackson Square, the Riverwalk. The city itself is part of the experience.
+    </div>
+
+    <div class="spacer"></div>
+
+  </div>
+  <div class="page-footer">
+    <span>Journey Intelligence</span>
+    <span>New Orleans · French Quarter · Page 3</span>
+  </div>
+</div>
+
+
+
+</body>
+</html>
