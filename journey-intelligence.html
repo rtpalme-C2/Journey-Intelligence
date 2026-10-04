@@ -618,9 +618,13 @@ const LS_PAT      = 'ji_gh_pat';
 const LS_SHA      = 'ji_gh_sha';
 
 // ── Data version contract ─────────────────────────────────────────────────
-// DATA_VERSION guards against loading stale/incompatible localStorage data.
-// Bump DATA_VERSION when schema changes make old data incompatible.
-// Update LS_KEY to match (e.g. 'ji-v2').
+// DATA_VERSION says which schema a file was written with. It is NEVER used to discard data
+// (DESIGN_SYSTEM.md sections 26 and 28):
+//   • file OLDER than the app  → use it (migrate if needed) and save it back at the current version
+//   • file EQUAL               → use it
+//   • file NEWER than the app  → load read-only (dataLocked), never persist or push it
+//   • "no data" means only: file empty, or its data array is empty
+// Migrate a changed field with a per-record, idempotent migration; do NOT bump DATA_VERSION to migrate.
 const DATA_VERSION = 1;
 const LS_KEY = 'ji-v1';
 
@@ -685,25 +689,32 @@ function disconnectGitHub() {
 function loadLocal() {
   try {
     const raw = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
-    if (raw && raw._version === DATA_VERSION) {
+    if (isRecognised(raw)) {
       clients = raw.data || [];
       localTrusted = clients.length > 0;
+      if (Number(raw._version) > DATA_VERSION) dataLocked = true;   // newer than this app: read-only
       if (raw.settings) { const s = raw.settings; settings = {...settings, myPct: s.myPct ?? (s.agencyPct ? (100 - s.agencyPct) : 70) }; }
-    } else if (raw) {
-      localStorage.removeItem(LS_KEY); // stale version — discard
     }
   } catch(e) {}
   if (!clients) clients = [];
 }
 
 function persist() {
+  if (dataLocked) return;
   try { localStorage.setItem(LS_KEY, JSON.stringify({_version:DATA_VERSION, data:clients, settings})); }
   catch(e) {}
 }
 
-function pushAllowed() { return remoteReady || localTrusted; }
+let dataLocked = false;   // true when the data file is newer than this app: read-only, never overwritten
+function pushAllowed() { return !dataLocked && (remoteReady || localTrusted); }
+function lockedNotice(msg) {
+  setSyncStatus('error', 'Read-only — ' + msg);
+  showToast('Read-only: ' + msg + '. Reload with the latest app version.', true);
+}
+function isRecognised(o) { return !!o && typeof o === 'object' && Array.isArray(o.data); }
 
 function scheduleSave() {
+  if (dataLocked) { lockedNotice('data file is from a newer app version'); return; }
   persist();
   if (!configOk()) return;
   if (!pushAllowed()) { setSyncStatus('error', 'Not synced yet — changes kept locally'); return; }
@@ -1318,16 +1329,27 @@ async function syncFromGitHub() {
     if (!text.trim()) remoteReady = true;
     if (text && text.trim().startsWith('{')) {
       const parsed = JSON.parse(text);
-      if (parsed && parsed._version === DATA_VERSION) remoteReady = true;
-      const hasData = parsed && parsed._version === DATA_VERSION &&
-        Array.isArray(parsed.data) && parsed.data.length > 0;
-      if (hasData) {
+      if (!isRecognised(parsed)) {
+        // A non-empty file we don't recognise is never overwritten.
+        dataLocked = true;
+        lockedNotice('data file format not recognised');
+        return;
+      }
+      remoteReady = true;
+      if (parsed.data.length > 0) {
         clients = parsed.data;
         if (parsed.settings) { const s = parsed.settings; settings = {...settings, myPct: s.myPct ?? (s.agencyPct ? (100 - s.agencyPct) : 70) }; }
+        if (Number(parsed._version) > DATA_VERSION) {
+          dataLocked = true;           // newer than this app: read-only, never persisted or pushed
+          render();
+          lockedNotice('data file is from a newer app version');
+          return;
+        }
         persist();
         render();
         setSyncStatus('connected', 'Synced from GitHub · ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
         await fetchSHA();
+        if (!(Number(parsed._version) >= DATA_VERSION)) await saveToGitHub();   // older/missing version: write back at the current version
         return;
       }
     }
@@ -1488,6 +1510,7 @@ loadLocal();
 if (clients.length === 0 && !configOk()) { clients = seedData(); persist(); }
 render();
 updateSetupBanner();
+if (dataLocked) lockedNotice('data file is from a newer app version');
 
 if (configOk()) {
   syncFromGitHub();
